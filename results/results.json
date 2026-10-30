@@ -1,0 +1,61 @@
+{
+  "test_images_used": 68,
+  "counts": {
+    "clean": {
+      "tp": 142,
+      "fn": 0,
+      "fp": 2
+    },
+    "random": {
+      "tp": 131,
+      "fn": 11,
+      "fp": 3
+    },
+    "attacked": {
+      "tp": 34,
+      "fn": 108,
+      "fp": 6
+    },
+    "def_clean": {
+      "tp": 137,
+      "fn": 5,
+      "fp": 4
+    },
+    "def_attacked": {
+      "tp": 120,
+      "fn": 22,
+      "fp": 7
+    }
+  },
+  "clean": {
+    "precision": 0.9861,
+    "recall": 1.0,
+    "f1": 0.993
+  },
+  "random": {
+    "precision": 0.9776,
+    "recall": 0.9225,
+    "f1": 0.9493
+  },
+  "attacked": {
+    "precision": 0.85,
+    "recall": 0.2394,
+    "f1": 0.3736
+  },
+  "def_clean": {
+    "precision": 0.9716,
+    "recall": 0.9648,
+    "f1": 0.9682
+  },
+  "def_attacked": {
+    "precision": 0.9449,
+    "recall": 0.8451,
+    "f1": 0.8922
+  },
+  "attack_success_rate": 0.7606,
+  "attack_success_rate_after_defence": 0.1549,
+  "alert_rate_attacked": 0.8235,
+  "false_alert_rate_clean": 0.0441,
+  "latency_ms_detector_only": 18.42,
+  "latency_ms_patchguard_pipeline": 33.24
+}
