@@ -43,3 +43,8 @@ Thumbs.db
 *.swp
 *.bak
 ~$*.docx
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env

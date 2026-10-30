@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PatchGuard Studio</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--mute:#5d6675;--line:#e3e6ec;--acc:#1565c0;--bad:#c62828;--ok:#2e7d32;--warn:#ef6c00}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1218;--card:#171b23;--ink:#e8ebf0;--mute:#98a1b0;--line:#272d38;--acc:#64a6ff;--bad:#ff6b6b;--ok:#5fd07a;--warn:#ffa24d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:28px 16px 8px;max-width:1180px;margin:auto}
+h1{margin:0;font-size:26px;letter-spacing:-.02em}h1 span{color:var(--acc)}
+header p{margin:4px 0 0;color:var(--mute);max-width:70ch}
+main{max-width:1180px;margin:auto;padding:16px;display:grid;grid-template-columns:320px 1fr;gap:16px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:0 0 12px}
+label{display:block;font-size:13px;margin-top:12px}label b{float:right;font-variant-numeric:tabular-nums;color:var(--acc)}
+input[type=range]{width:100%}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--mute);cursor:pointer}
+.drop.on{border-color:var(--acc);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}button:disabled{opacity:.5}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+figure{margin:0}figcaption{font-size:12px;color:var(--mute);margin-bottom:4px}
+figure img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#000}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px}.stat small{color:var(--mute);display:block;font-size:12px}.stat strong{font-size:20px;font-variant-numeric:tabular-nums}
+.banner{padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:600}
+.banner.alert{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.banner.fine{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.banner.info{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc);font-weight:500}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.bars .b{display:grid;grid-template-columns:150px 1fr 56px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.bars .t{height:16px;background:var(--line);border-radius:4px;overflow:hidden}.bars .t i{display:block;height:100%}
+.hide{display:none}.small{font-size:12px;color:var(--mute)}
+section.full{max-width:1180px;margin:0 auto;padding:0 16px 32px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+</style>
+</head>
+<body>
+<header>
+  <h1>Patch<span>Guard</span> Studio</h1>
+  <p>Interactive demo of a model-agnostic defence against physical adversarial stickers: gradient-density localisation, normalised-convolution neutralisation and discrepancy alerting.</p>
+</header>
+
+<main>
+  <aside class="card">
+    <h2>1 · Input</h2>
+    <div class="drop" id="drop">Drop an image here or click to choose<br><span class="small">no upload? the built-in sample scene is used</span></div>
+    <input type="file" id="file" accept="image/*" class="hide">
+    <div class="chk"><input type="checkbox" id="sticker" checked><label for="sticker" style="margin:0">Simulate a sticker on the image</label></div>
+    <div id="stickerCtl">
+      <label>Sticker x <b id="vsx">0.50</b><input type="range" id="sx" min="0.05" max="0.95" step="0.01" value="0.5"></label>
+      <label>Sticker y <b id="vsy">0.62</b><input type="range" id="sy" min="0.05" max="0.95" step="0.01" value="0.62"></label>
+      <label>Sticker size <b id="vss">0.20</b><input type="range" id="ss" min="0.08" max="0.45" step="0.01" value="0.2"></label>
+    </div>
+    <h2 style="margin-top:22px">2 · Defence parameters</h2>
+    <label>Window (win) <b id="vwin">31</b><input type="range" id="win" min="9" max="71" step="2" value="31"></label>
+    <label>Threshold k (μ + kσ) <b id="vk">2.0</b><input type="range" id="k" min="0.5" max="4" step="0.1" value="2"></label>
+    <label>Dilate (px) <b id="vdilate">9</b><input type="range" id="dilate" min="0" max="25" step="1" value="9"></label>
+    <label>Min blob area <b id="vmin_area">400</b><input type="range" id="min_area" min="0" max="3000" step="50" value="400"></label>
+    <label>Fill blur σ <b id="vsigma">12</b><input type="range" id="sigma" min="2" max="30" step="1" value="12"></label>
+    <div class="chk"><input type="checkbox" id="detect"><label for="detect" style="margin:0">Run YOLOv8n person detection</label></div>
+    <label>Detector confidence <b id="vconf">0.50</b><input type="range" id="conf" min="0.1" max="0.9" step="0.05" value="0.5"></label>
+    <div class="row"><button class="p" id="run">Run PatchGuard</button><button id="reset">Reset</button></div>
+    <p class="small" id="status"></p>
+  </aside>
+
+  <div>
+    <div class="card">
+      <div class="tabs"><button class="on" data-t="pipe">Pipeline</button><button data-t="bench">Benchmark</button><button data-t="how">How it works</button></div>
+
+      <div id="pipe">
+        <div id="banner"></div>
+        <div class="stats" id="stats"></div>
+        <div class="grid" id="panels"><p class="small">Run PatchGuard to see results.</p></div>
+        <div id="det" class="hide" style="margin-top:16px">
+          <h2>Detector output (person class)</h2>
+          <div class="grid" id="detPanels"></div>
+        </div>
+      </div>
+
+      <div id="bench" class="hide">
+        <p class="small" id="benchSrc"></p>
+        <div class="bars" id="bars"></div>
+        <div class="stats" id="ops" style="margin-top:14px"></div>
+      </div>
+
+      <div id="how" class="hide">
+        <table>
+          <tr><th>Stage</th><th>What happens</th></tr>
+          <tr><td>1. Localise</td><td>Sobel gradient magnitude → local density ρ via a <i>win×win</i> box filter → flag pixels with ρ &gt; μ<sub>ρ</sub> + kσ<sub>ρ</sub>, drop blobs smaller than the minimum area, dilate.</td></tr>
+          <tr><td>2. Neutralise</td><td>Replace masked pixels with a normalised-convolution blur of surrounding clean pixels (Gaussian σ).</td></tr>
+          <tr><td>3. Alert</td><td>Detect on raw and sanitised frames; if the sanitised frame reveals more people than the raw one, raise a security alert.</td></tr>
+        </table>
+        <p class="small">The sticker simulator here is a high-frequency stand-in. To use your real learned patch, run <code>patchguard_demo.py</code> and keep <code>results/patch.png</code> – the app picks it up automatically. A synthetic sticker cannot fool YOLO the way the optimised one does, so the alert fires only when the detector is actually affected.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let file=null;
+const sliders=['sx','sy','ss','win','k','dilate','min_area','sigma','conf'];
+const fmt={sx:2,sy:2,ss:2,k:1,conf:2};
+sliders.forEach(s=>{const el=$(s),o=$('v'+s);const u=()=>o.textContent=(+el.value).toFixed(fmt[s]||0);el.oninput=u;u();});
+$('sticker').onchange=()=>$('stickerCtl').classList.toggle('hide',!$('sticker').checked);
+$('drop').onclick=()=>$('file').click();
+function setFile(f){file=f;$('drop').classList.toggle('on',!!f);$('drop').firstChild.textContent=f?f.name:'Drop an image here or click to choose';}
+$('file').onchange=e=>setFile(e.target.files[0]);
+['dragover','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'&&e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);}));
+$('reset').onclick=()=>location.reload();
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['pipe','bench','how'].forEach(t=>$(t).classList.toggle('hide',t!==b.dataset.t));
+});
+fetch('/api/status').then(r=>r.json()).then(s=>{
+  $('status').textContent=s.detector?'YOLO detector ready.':'YOLO not available (defence-only mode). Install ultralytics for detection.';
+  if(!s.detector){$('detect').disabled=true;}
+  if(s.learned_patch)$('status').textContent+=' Using learned patch from results/patch.png.';
+});
+
+const fig=(t,src)=>`<figure><figcaption>${t}</figcaption><img src="${src}" alt="${t}"></figure>`;
+$('run').onclick=async()=>{
+  const fd=new FormData();
+  if(file)fd.append('image',file);
+  fd.append('sticker',$('sticker').checked?'1':'0');
+  fd.append('detect',$('detect').checked?'1':'0');
+  sliders.forEach(s=>fd.append(s,$(s).value));
+  $('run').disabled=true;$('run').textContent='Running…';
+  try{
+    const r=await fetch('/api/analyze',{method:'POST',body:fd});const d=await r.json();
+    if(d.error){$('banner').innerHTML=`<div class="banner alert">${d.error}</div>`;return;}
+    const m=d.metrics,I=d.images;
+    $('stats').innerHTML=[['Mask coverage',m.mask_coverage_pct.toFixed(2)+'%'],['Defence time',m.defence_ms.toFixed(1)+' ms'],['Density threshold',m.threshold.toFixed(4)],['Peak density',m.rho_max.toFixed(4)],['Image',d.size.join('×')]]
+      .map(([a,b])=>`<div class="stat"><small>${a}</small><strong>${b}</strong></div>`).join('');
+    $('panels').innerHTML=fig($('sticker').checked?'Input (with sticker)':'Input',I.input)+fig('Gradient density ρ',I.density)+fig('Patch mask M',I.mask)+fig('Mask overlay',I.overlay)+fig('Sanitised output',I.sanitised);
+    const dt=d.detection;$('det').classList.toggle('hide',!(dt&&dt.available));
+    let ban='';
+    if(dt&&dt.available){
+      $('detPanels').innerHTML=fig(`Raw frame – ${dt.raw_count} person(s)`,dt.raw_img)+fig(`Sanitised frame – ${dt.def_count} person(s)`,dt.def_img);
+      ban=dt.alert?`<div class="banner alert">⚠ Security alert: sanitising revealed ${dt.def_count-dt.raw_count} hidden person(s) – possible adversarial patch.</div>`:`<div class="banner fine">No discrepancy between raw and sanitised detections.</div>`;
+    }else if(dt){ban=`<div class="banner info">Detector unavailable: ${dt.error||''}</div>`;}
+    else ban=`<div class="banner info">Enable YOLO detection to get the discrepancy alert. Mask coverage above shows what the defence removed.</div>`;
+    $('banner').innerHTML=ban;
+  }catch(e){$('banner').innerHTML=`<div class="banner alert">${e}</div>`;}
+  finally{$('run').disabled=false;$('run').textContent='Run PatchGuard';}
+};
+
+fetch('/api/results').then(r=>r.json()).then(({source,data:d})=>{
+  $('benchSrc').textContent='Person recall @ IoU 0.5 across five conditions. Source: '+source+(d.test_images_used?` · ${d.test_images_used} test images`:'');
+  const rows=[['Clean','clean','var(--ok)'],['Random sticker','random','#9e9e9e'],['Adversarial sticker','attacked','var(--bad)'],['PatchGuard (clean)','def_clean','var(--acc)'],['PatchGuard (adversarial)','def_attacked','var(--warn)']];
+  $('bars').innerHTML=rows.map(([n,k,c])=>`<div class="b"><span>${n}</span><div class="t"><i style="width:${d[k].recall*100}%;background:${c}"></i></div><b>${(d[k].recall*100).toFixed(1)}%</b></div>`).join('');
+  const s=[['Attack success rate',(d.attack_success_rate*100).toFixed(1)+'%'],['After defence',(d.attack_success_rate_after_defence*100).toFixed(1)+'%'],['Alert rate (attacked)',(d.alert_rate_attacked*100).toFixed(1)+'%'],['False alerts (clean)',(d.false_alert_rate_clean*100).toFixed(1)+'%'],['Detector latency',d.latency_ms_detector_only.toFixed(1)+' ms'],['Full pipeline',d.latency_ms_patchguard_pipeline.toFixed(1)+' ms']];
+  $('ops').innerHTML=s.map(([a,b])=>`<div class="stat"><small>${a}</small><strong>${b}</strong></div>`).join('');
+});
+</script>
+</body>
+</html>
